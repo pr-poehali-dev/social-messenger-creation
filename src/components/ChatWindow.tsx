@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Icon from '@/components/ui/icon';
 
 interface Message {
@@ -21,9 +27,10 @@ interface ChatWindowProps {
     isOnline: boolean;
   };
   messages: Message[];
+  currentUserId?: string;
 }
 
-export default function ChatWindow({ chat, messages: initialMessages }: ChatWindowProps) {
+export default function ChatWindow({ chat, messages: initialMessages, currentUserId = 'me' }: ChatWindowProps) {
   const [messages, setMessages] = useState(initialMessages);
   const [newMessage, setNewMessage] = useState('');
   const { toast } = useToast();
@@ -51,9 +58,18 @@ export default function ChatWindow({ chat, messages: initialMessages }: ChatWind
     toast({ description: 'Выберите файл для отправки' });
   };
 
+  const handleDeleteMessage = (messageId: string) => {
+    setMessages(messages.filter(m => m.id !== messageId));
+    toast({ description: 'Сообщение удалено' });
+  };
+
+  const handleEditMessage = (messageId: string) => {
+    toast({ description: 'Редактирование сообщения' });
+  };
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 p-4 border-b">
+      <div className="hidden lg:flex items-center gap-3 p-4 border-b">
         <div className="relative">
           <Avatar className="w-10 h-10">
             <AvatarImage src={chat.avatar} alt={chat.name} />
@@ -85,23 +101,51 @@ export default function ChatWindow({ chat, messages: initialMessages }: ChatWind
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+              className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'} animate-fade-in group`}
             >
-              <div
-                className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                  message.sender === 'me'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground'
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <p
-                  className={`text-[10px] mt-1 ${
-                    message.sender === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+              <div className="flex items-start gap-2">
+                {message.sender === 'me' && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Icon name="MoreVertical" size={14} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditMessage(message.id)}>
+                        <Icon name="Edit" size={14} className="mr-2" />
+                        Редактировать
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteMessage(message.id)}
+                        className="text-destructive"
+                      >
+                        <Icon name="Trash2" size={14} className="mr-2" />
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <div
+                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                    message.sender === 'me'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-foreground'
                   }`}
                 >
-                  {message.timestamp}
-                </p>
+                  <p className="text-sm leading-relaxed">{message.text}</p>
+                  <p
+                    className={`text-[10px] mt-1 ${
+                      message.sender === 'me' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {message.timestamp}
+                  </p>
+                </div>
               </div>
             </div>
           ))}

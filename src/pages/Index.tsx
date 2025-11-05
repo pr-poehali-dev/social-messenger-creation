@@ -44,8 +44,8 @@ const mockPosts = [
     timestamp: '2 ч',
     likes: 342,
     comments: [
-      { author: 'Дмитрий', text: 'Какая красота! 😍', avatar: '/placeholder.svg' },
-      { author: 'Анна', text: 'Где это?', avatar: '/placeholder.svg' },
+      { id: 'c1', author: 'Дмитрий', text: 'Какая красота! 😍', avatar: '/placeholder.svg', authorId: 'user2' },
+      { id: 'c2', author: 'Анна', text: 'Где это?', avatar: '/placeholder.svg', authorId: 'user3' },
     ],
   },
   {
@@ -55,7 +55,7 @@ const mockPosts = [
     timestamp: '5 ч',
     likes: 156,
     comments: [
-      { author: 'Сергей', text: 'Поздравляю! 🎉', avatar: '/placeholder.svg' },
+      { id: 'c3', author: 'Сергей', text: 'Поздравляю! 🎉', avatar: '/placeholder.svg', authorId: 'user4' },
     ],
   },
   {
@@ -119,7 +119,7 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('activeTab') || 'feed';
   });
-  const [selectedChatId, setSelectedChatId] = useState<string>('1');
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(3);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -130,7 +130,7 @@ export default function Index() {
     localStorage.setItem('activeTab', activeTab);
   }, [activeTab]);
 
-  const selectedChat = mockChats.find((c) => c.id === selectedChatId);
+  const selectedChat = selectedChatId ? mockChats.find((c) => c.id === selectedChatId) : null;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +152,14 @@ export default function Index() {
     { id: 'messages', icon: 'MessageCircle', label: 'Чаты' },
     { id: 'friends', icon: 'Users', label: 'Друзья' },
     { id: 'groups', icon: 'UsersRound', label: 'Группы' },
+    { id: 'settings', icon: 'Settings', label: 'Настройки' },
+  ];
+
+  const mobileMenuItems = [
+    { id: 'feed', icon: 'Home', label: 'Лента' },
+    { id: 'messages', icon: 'MessageCircle', label: 'Чаты' },
+    { id: 'friends', icon: 'Users', label: 'Друзья' },
+    { id: 'settings', icon: 'Settings', label: 'Настройки' },
   ];
 
   return (
@@ -322,7 +330,7 @@ export default function Index() {
           </div>
         </header>
 
-        <main className="p-3 sm:p-4 md:p-6">
+        <main className="p-3 sm:p-4 md:p-6 pb-20 lg:pb-6">
           {activeTab === 'feed' && (
           <div className="space-y-6">
             <Card className="p-4">
@@ -360,7 +368,7 @@ export default function Index() {
                 </Card>
 
                 {mockPosts.map((post) => (
-                  <Post key={post.id} {...post} />
+                  <Post key={post.id} {...post} isOwner={post.author.username === mockUser.username} currentUserId="me" />
                 ))}
               </div>
 
@@ -395,7 +403,7 @@ export default function Index() {
           {activeTab === 'messages' && (
           <div>
             <div className="grid lg:grid-cols-3 gap-3 md:gap-4" style={{ height: 'calc(100vh - 160px)' }}>
-              <Card className="lg:col-span-1 overflow-hidden flex flex-col">
+              <Card className={`lg:col-span-1 overflow-hidden flex-col ${selectedChat ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-4 border-b flex-shrink-0">
                   <div className="relative">
                     <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -407,9 +415,23 @@ export default function Index() {
                 </div>
               </Card>
 
-              <Card className="lg:col-span-2 overflow-hidden flex flex-col">
+              <Card className={`lg:col-span-2 overflow-hidden flex-col ${selectedChat ? 'flex' : 'hidden lg:flex'}`}>
                 {selectedChat ? (
-                  <ChatWindow chat={selectedChat} messages={mockMessages} />
+                  <div className="flex flex-col h-full">
+                    <div className="lg:hidden p-3 border-b flex items-center gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setSelectedChatId(null)}
+                      >
+                        <Icon name="ArrowLeft" size={20} />
+                      </Button>
+                      <span className="font-semibold">{selectedChat.name}</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <ChatWindow chat={selectedChat} messages={mockMessages} />
+                    </div>
+                  </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
@@ -431,7 +453,7 @@ export default function Index() {
               <div className="mt-6 space-y-4">
                 <h2 className="text-xl font-bold">Мои посты</h2>
                 {mockPosts.slice(0, 2).map((post) => (
-                  <Post key={post.id} {...post} />
+                  <Post key={post.id} {...post} isOwner={post.author.username === mockUser.username} currentUserId="me" />
                 ))}
               </div>
             </div>
@@ -516,6 +538,25 @@ export default function Index() {
         onOpenChange={setCreateGroupOpen}
         friends={mockChats.map(chat => ({ id: chat.id, name: chat.name, avatar: chat.avatar }))}
       />
+
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t z-50">
+        <div className="flex items-center justify-around h-16 px-2">
+          {mobileMenuItems.map((item) => (
+            <Button
+              key={item.id}
+              variant={activeTab === item.id ? 'secondary' : 'ghost'}
+              size="icon"
+              className="relative h-12 w-12 flex-col gap-1"
+              onClick={() => setActiveTab(item.id)}
+            >
+              <Icon name={item.icon as any} size={20} />
+              {item.id === 'messages' && mockChats.reduce((acc, chat) => acc + chat.unread, 0) > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </Button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

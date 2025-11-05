@@ -49,7 +49,7 @@ export default function ProfileCard({ user }: ProfileCardProps) {
 
           <Separator className="mb-4" />
 
-          <div className="flex gap-2 w-full">
+          <div className="flex gap-2 w-full mb-6">
             <Button className="flex-1 gap-2">
               <Icon name="UserPlus" size={16} />
               Подписаться
@@ -58,6 +58,59 @@ export default function ProfileCard({ user }: ProfileCardProps) {
               <Icon name="MessageCircle" size={16} />
               Написать
             </Button>
+          </div>
+
+          <div className="w-full space-y-4">
+            <h3 className="font-semibold text-sm text-left">Статистика активности</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Посещения</span>
+                  <span className="font-medium">+12% за неделю</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-primary to-secondary" style={{ width: '72%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Популярные посты</span>
+                  <span className="font-medium">5.2K просмотров</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-secondary to-accent" style={{ width: '89%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-muted-foreground">Вовлечённость</span>
+                  <span className="font-medium">3.8K реакций</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-accent to-primary" style={{ width: '65%' }} />
+                </div>
+              </div>
+            </div>
+
+            <Card className="bg-muted/30 border-0 p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-lg font-bold text-primary">2.4K</p>
+                  <p className="text-[10px] text-muted-foreground">Лайков</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-secondary">856</p>
+                  <p className="text-[10px] text-muted-foreground">Комментариев</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-accent">312</p>
+                  <p className="text-[10px] text-muted-foreground">Поделились</p>
+                </div>
+              </div>
+            </Card>
           </div>
         </div>
       </CardContent>

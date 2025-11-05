@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import Icon from '@/components/ui/icon';
 
 interface PostProps {
@@ -18,10 +24,12 @@ interface PostProps {
   image?: string;
   timestamp: string;
   likes: number;
-  comments: { author: string; text: string; avatar: string }[];
+  comments: { id: string; author: string; text: string; avatar: string; authorId?: string }[];
+  currentUserId?: string;
+  isOwner?: boolean;
 }
 
-export default function Post({ author, content, image, timestamp, likes: initialLikes, comments: initialComments }: PostProps) {
+export default function Post({ author, content, image, timestamp, likes: initialLikes, comments: initialComments, currentUserId = 'me', isOwner = false }: PostProps) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(initialLikes);
   const [showComments, setShowComments] = useState(false);
@@ -37,7 +45,13 @@ export default function Post({ author, content, image, timestamp, likes: initial
 
   const handleComment = () => {
     if (newComment.trim()) {
-      setComments([...comments, { author: 'Вы', text: newComment, avatar: '/placeholder.svg' }]);
+      setComments([...comments, { 
+        id: Date.now().toString(),
+        author: 'Вы', 
+        text: newComment, 
+        avatar: '/placeholder.svg',
+        authorId: currentUserId 
+      }]);
       setNewComment('');
       toast({ description: 'Комментарий добавлен' });
     }
@@ -47,8 +61,21 @@ export default function Post({ author, content, image, timestamp, likes: initial
     toast({ description: 'Пост скопирован в буфер обмена' });
   };
 
-  const handleMenu = () => {
-    toast({ description: 'Меню поста' });
+  const handleDeletePost = () => {
+    toast({ description: 'Пост удалён' });
+  };
+
+  const handleEditPost = () => {
+    toast({ description: 'Редактирование поста' });
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    setComments(comments.filter(c => c.id !== commentId));
+    toast({ description: 'Комментарий удалён' });
+  };
+
+  const handleEditComment = (commentId: string) => {
+    toast({ description: 'Редактирование комментария' });
   };
 
   return (
@@ -65,9 +92,25 @@ export default function Post({ author, content, image, timestamp, likes: initial
                 <p className="font-semibold text-sm">{author.name}</p>
                 <p className="text-xs text-muted-foreground">@{author.username} · {timestamp}</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleMenu}>
-                <Icon name="MoreHorizontal" size={18} />
-              </Button>
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Icon name="MoreHorizontal" size={18} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleEditPost}>
+                      <Icon name="Edit" size={14} className="mr-2" />
+                      Редактировать
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDeletePost} className="text-destructive">
+                      <Icon name="Trash2" size={14} className="mr-2" />
+                      Удалить
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
@@ -121,15 +164,47 @@ export default function Post({ author, content, image, timestamp, likes: initial
             <Separator className="mb-3" />
             
             <div className="space-y-3 mb-3 max-h-48 overflow-y-auto">
-              {comments.map((comment, idx) => (
-                <div key={idx} className="flex gap-2 text-sm">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex gap-2 text-sm group">
                   <Avatar className="w-7 h-7">
                     <AvatarImage src={comment.avatar} />
                     <AvatarFallback>{comment.author[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                    <p className="font-semibold text-xs mb-0.5">{comment.author}</p>
-                    <p className="text-xs leading-relaxed">{comment.text}</p>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-semibold text-xs mb-0.5">{comment.author}</p>
+                        <p className="text-xs leading-relaxed">{comment.text}</p>
+                      </div>
+                      {(comment.authorId === currentUserId || isOwner) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Icon name="MoreHorizontal" size={12} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {comment.authorId === currentUserId && (
+                              <DropdownMenuItem onClick={() => handleEditComment(comment.id)}>
+                                <Icon name="Edit" size={12} className="mr-2" />
+                                Редактировать
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="text-destructive"
+                            >
+                              <Icon name="Trash2" size={12} className="mr-2" />
+                              Удалить
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
