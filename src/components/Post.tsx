@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -27,6 +28,7 @@ export default function Post({ author, content, image, timestamp, likes: initial
   const [comments, setComments] = useState(initialComments);
   const [newComment, setNewComment] = useState('');
   const [bookmarked, setBookmarked] = useState(false);
+  const { toast } = useToast();
 
   const handleLike = () => {
     setLiked(!liked);
@@ -37,7 +39,16 @@ export default function Post({ author, content, image, timestamp, likes: initial
     if (newComment.trim()) {
       setComments([...comments, { author: 'Вы', text: newComment, avatar: '/placeholder.svg' }]);
       setNewComment('');
+      toast({ description: 'Комментарий добавлен' });
     }
+  };
+
+  const handleShare = () => {
+    toast({ description: 'Пост скопирован в буфер обмена' });
+  };
+
+  const handleMenu = () => {
+    toast({ description: 'Меню поста' });
   };
 
   return (
@@ -54,7 +65,7 @@ export default function Post({ author, content, image, timestamp, likes: initial
                 <p className="font-semibold text-sm">{author.name}</p>
                 <p className="text-xs text-muted-foreground">@{author.username} · {timestamp}</p>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleMenu}>
                 <Icon name="MoreHorizontal" size={18} />
               </Button>
             </div>
@@ -92,7 +103,7 @@ export default function Post({ author, content, image, timestamp, likes: initial
             <span className="text-xs font-medium">{comments.length}</span>
           </Button>
 
-          <Button variant="ghost" size="sm" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-2" onClick={handleShare}>
             <Icon name="Share2" size={18} />
           </Button>
 

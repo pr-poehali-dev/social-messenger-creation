@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 import Post from '@/components/Post';
 import Story from '@/components/Story';
 import ChatList from '@/components/ChatList';
 import ChatWindow from '@/components/ChatWindow';
 import ProfileCard from '@/components/ProfileCard';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const mockUser = {
   name: 'Александр Иванов',
@@ -114,14 +117,41 @@ const mockMessages = [
 export default function Index() {
   const [activeTab, setActiveTab] = useState('feed');
   const [selectedChatId, setSelectedChatId] = useState<string>('1');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState(3);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { toast } = useToast();
 
   const selectedChat = mockChats.find((c) => c.id === selectedChatId);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      toast({
+        title: "Поиск",
+        description: `Поиск по запросу: "${searchQuery}"`,
+      });
+    }
+  };
+
+  const handleNotificationsClick = () => {
+    setShowNotifications(!showNotifications);
+    setNotifications(0);
+  };
+
+  const menuItems = [
+    { id: 'feed', icon: 'Home', label: 'Лента' },
+    { id: 'messages', icon: 'MessageCircle', label: 'Чаты' },
+    { id: 'profile', icon: 'User', label: 'Профиль' },
+    { id: 'friends', icon: 'Users', label: 'Друзья' },
+    { id: 'groups', icon: 'UsersRound', label: 'Группы' },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-background flex">
+      <aside className="hidden lg:flex w-64 border-r bg-card flex-col fixed left-0 top-0 h-screen">
+        <div className="p-6 border-b">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Icon name="Users" size={20} className="text-white" />
             </div>
@@ -129,56 +159,138 @@ export default function Index() {
               SocialHub
             </h1>
           </div>
+        </div>
 
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full">
-              <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Поиск..." className="pl-10" />
+        <nav className="flex-1 p-4">
+          <div className="space-y-1">
+            {menuItems.map((item) => (
+              <Button
+                key={item.id}
+                variant={activeTab === item.id ? 'secondary' : 'ghost'}
+                className="w-full justify-start gap-3"
+                onClick={() => setActiveTab(item.id)}
+              >
+                <Icon name={item.icon as any} size={20} />
+                <span>{item.label}</span>
+                {item.id === 'messages' && mockChats.reduce((acc, chat) => acc + chat.unread, 0) > 0 && (
+                  <Badge className="ml-auto">{mockChats.reduce((acc, chat) => acc + chat.unread, 0)}</Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+        </nav>
+
+        <div className="p-4 border-t space-y-2">
+          <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleNotificationsClick}>
+            <Icon name="Bell" size={20} />
+            <span>Уведомления</span>
+            {notifications > 0 && <Badge className="ml-auto">{notifications}</Badge>}
+          </Button>
+          <Button variant="ghost" className="w-full justify-start gap-3">
+            <Icon name="Settings" size={20} />
+            <span>Настройки</span>
+          </Button>
+          <ThemeToggle />
+        </div>
+      </aside>
+
+      <div className="flex-1 lg:ml-64">
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
+          <div className="px-4 h-16 flex items-center justify-between">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Icon name="Menu" size={24} />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <div className="p-6 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                      <Icon name="Users" size={20} className="text-white" />
+                    </div>
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                      SocialHub
+                    </h1>
+                  </div>
+                </div>
+
+                <nav className="p-4">
+                  <div className="space-y-1">
+                    {menuItems.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant={activeTab === item.id ? 'secondary' : 'ghost'}
+                        className="w-full justify-start gap-3"
+                        onClick={() => setActiveTab(item.id)}
+                      >
+                        <Icon name={item.icon as any} size={20} />
+                        <span>{item.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </nav>
+
+                <div className="p-4 border-t space-y-2">
+                  <Button variant="ghost" className="w-full justify-start gap-3">
+                    <Icon name="Bell" size={20} />
+                    <span>Уведомления</span>
+                  </Button>
+                  <Button variant="ghost" className="w-full justify-start gap-3">
+                    <Icon name="Settings" size={20} />
+                    <span>Настройки</span>
+                  </Button>
+                  <ThemeToggle />
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <h1 className="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              SocialHub
+            </h1>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="relative" onClick={handleNotificationsClick}>
+                <Icon name="Bell" size={20} />
+                {notifications > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </Button>
+              <ThemeToggle />
             </div>
           </div>
+        </header>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <Icon name="Bell" size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Icon name="Settings" size={20} />
-            </Button>
-            <Avatar className="w-9 h-9 cursor-pointer">
-              <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
-              <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
-            </Avatar>
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b hidden lg:block">
+          <div className="px-6 h-16 flex items-center justify-between">
+            <form onSubmit={handleSearch} className="flex-1 max-w-md">
+              <div className="relative">
+                <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  placeholder="Поиск..." 
+                  className="pl-10" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </form>
+
+            <div className="flex items-center gap-3">
+              <Avatar className="w-9 h-9 cursor-pointer">
+                <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
+              </Avatar>
+              <div className="hidden xl:block">
+                <p className="text-sm font-semibold">{mockUser.name}</p>
+                <p className="text-xs text-muted-foreground">@{mockUser.username}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-5 mb-6">
-            <TabsTrigger value="feed" className="gap-2">
-              <Icon name="Home" size={18} />
-              <span className="hidden sm:inline">Лента</span>
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="gap-2">
-              <Icon name="MessageCircle" size={18} />
-              <span className="hidden sm:inline">Чаты</span>
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="gap-2">
-              <Icon name="User" size={18} />
-              <span className="hidden sm:inline">Профиль</span>
-            </TabsTrigger>
-            <TabsTrigger value="friends" className="gap-2">
-              <Icon name="Users" size={18} />
-              <span className="hidden sm:inline">Друзья</span>
-            </TabsTrigger>
-            <TabsTrigger value="groups" className="gap-2">
-              <Icon name="UsersRound" size={18} />
-              <span className="hidden sm:inline">Группы</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="feed" className="space-y-6">
+        <main className="p-4 md:p-6">
+          {activeTab === 'feed' && (
+          <div className="space-y-6">
             <Card className="p-4">
               <ScrollArea className="w-full whitespace-nowrap">
                 <div className="flex gap-4 pb-2">
@@ -197,8 +309,17 @@ export default function Index() {
                       <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
                       <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
                     </Avatar>
-                    <Input placeholder="Что у вас нового?" className="flex-1" />
-                    <Button>
+                    <Input 
+                      placeholder="Что у вас нового?" 
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          toast({ description: 'Пост опубликован!' });
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <Button onClick={() => toast({ description: 'Пост опубликован!' })}>
                       <Icon name="Send" size={18} />
                     </Button>
                   </div>
@@ -234,21 +355,25 @@ export default function Index() {
                 </Card>
               </div>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
-          <TabsContent value="messages">
-            <div className="grid lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
-              <Card className="lg:col-span-1 overflow-hidden">
-                <div className="p-4 border-b">
+          {activeTab === 'messages' && (
+          <div>
+            <div className="grid lg:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 180px)' }}>
+              <Card className="lg:col-span-1 overflow-hidden flex flex-col">
+                <div className="p-4 border-b flex-shrink-0">
                   <div className="relative">
                     <Icon name="Search" size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input placeholder="Поиск чатов..." className="pl-10" />
                   </div>
                 </div>
-                <ChatList chats={mockChats} onSelectChat={setSelectedChatId} selectedChatId={selectedChatId} />
+                <div className="flex-1 overflow-hidden">
+                  <ChatList chats={mockChats} onSelectChat={setSelectedChatId} selectedChatId={selectedChatId} />
+                </div>
               </Card>
 
-              <Card className="lg:col-span-2 overflow-hidden">
+              <Card className="lg:col-span-2 overflow-hidden flex flex-col">
                 {selectedChat ? (
                   <ChatWindow chat={selectedChat} messages={mockMessages} />
                 ) : (
@@ -261,9 +386,11 @@ export default function Index() {
                 )}
               </Card>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
-          <TabsContent value="profile">
+          {activeTab === 'profile' && (
+          <div>
             <div className="max-w-2xl mx-auto">
               <ProfileCard user={mockUser} />
               
@@ -274,9 +401,11 @@ export default function Index() {
                 ))}
               </div>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
-          <TabsContent value="friends">
+          {activeTab === 'friends' && (
+          <div>
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold mb-6">Друзья</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -309,9 +438,11 @@ export default function Index() {
                 ))}
               </div>
             </div>
-          </TabsContent>
+          </div>
+          )}
 
-          <TabsContent value="groups">
+          {activeTab === 'groups' && (
+          <div>
             <div className="max-w-4xl mx-auto">
               <h2 className="text-2xl font-bold mb-6">Мои группы</h2>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -334,9 +465,10 @@ export default function Index() {
                 ))}
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+          </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

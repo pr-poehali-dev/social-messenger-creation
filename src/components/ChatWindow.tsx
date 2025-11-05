@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,7 @@ interface ChatWindowProps {
 export default function ChatWindow({ chat, messages: initialMessages }: ChatWindowProps) {
   const [messages, setMessages] = useState(initialMessages);
   const [newMessage, setNewMessage] = useState('');
+  const { toast } = useToast();
 
   const handleSend = () => {
     if (newMessage.trim()) {
@@ -39,6 +41,14 @@ export default function ChatWindow({ chat, messages: initialMessages }: ChatWind
       ]);
       setNewMessage('');
     }
+  };
+
+  const handleCall = (type: 'audio' | 'video') => {
+    toast({ description: `${type === 'audio' ? 'Аудио' : 'Видео'}звонок с ${chat.name}` });
+  };
+
+  const handleAttach = () => {
+    toast({ description: 'Выберите файл для отправки' });
   };
 
   return (
@@ -58,13 +68,13 @@ export default function ChatWindow({ chat, messages: initialMessages }: ChatWind
           <p className="text-xs text-muted-foreground">{chat.isOnline ? 'в сети' : 'не в сети'}</p>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleCall('audio')}>
             <Icon name="Phone" size={18} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleCall('video')}>
             <Icon name="Video" size={18} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => toast({ description: 'Меню чата' })}>
             <Icon name="MoreVertical" size={18} />
           </Button>
         </div>
@@ -101,7 +111,7 @@ export default function ChatWindow({ chat, messages: initialMessages }: ChatWind
       <Separator />
 
       <div className="p-4 flex gap-2">
-        <Button variant="ghost" size="icon" className="h-10 w-10">
+        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={handleAttach}>
           <Icon name="Paperclip" size={20} />
         </Button>
         <Input
