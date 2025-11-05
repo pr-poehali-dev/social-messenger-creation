@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import ChatList from '@/components/ChatList';
 import ChatWindow from '@/components/ChatWindow';
 import ProfileCard from '@/components/ProfileCard';
 import ThemeToggle from '@/components/ThemeToggle';
+import CreateGroupDialog from '@/components/CreateGroupDialog';
 
 const mockUser = {
   name: 'Александр Иванов',
@@ -115,12 +116,19 @@ const mockMessages = [
 ];
 
 export default function Index() {
-  const [activeTab, setActiveTab] = useState('feed');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('activeTab') || 'feed';
+  });
   const [selectedChatId, setSelectedChatId] = useState<string>('1');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(3);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   const selectedChat = mockChats.find((c) => c.id === selectedChatId);
 
@@ -142,16 +150,15 @@ export default function Index() {
   const menuItems = [
     { id: 'feed', icon: 'Home', label: 'Лента' },
     { id: 'messages', icon: 'MessageCircle', label: 'Чаты' },
-    { id: 'profile', icon: 'User', label: 'Профиль' },
     { id: 'friends', icon: 'Users', label: 'Друзья' },
     { id: 'groups', icon: 'UsersRound', label: 'Группы' },
   ];
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="hidden lg:flex w-64 border-r bg-card flex-col fixed left-0 top-0 h-screen">
-        <div className="p-6 border-b">
-          <div className="flex items-center gap-3">
+      <aside className="hidden lg:flex w-72 border-r bg-card flex-col fixed left-0 top-0 h-screen">
+        <div className="p-4 border-b">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
               <Icon name="Users" size={20} className="text-white" />
             </div>
@@ -159,9 +166,23 @@ export default function Index() {
               SocialHub
             </h1>
           </div>
+
+          <div 
+            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+            onClick={() => setActiveTab('profile')}
+          >
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+              <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate">{mockUser.name}</p>
+              <p className="text-xs text-muted-foreground truncate">@{mockUser.username}</p>
+            </div>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-1">
             {menuItems.map((item) => (
               <Button
@@ -190,11 +211,14 @@ export default function Index() {
             <Icon name="Settings" size={20} />
             <span>Настройки</span>
           </Button>
-          <ThemeToggle />
+          <div className="flex items-center justify-between px-3">
+            <span className="text-sm">Тема</span>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1 lg:ml-72">
         <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b lg:hidden">
           <div className="px-4 h-16 flex items-center justify-between">
             <Sheet>
@@ -203,15 +227,29 @@ export default function Index() {
                   <Icon name="Menu" size={24} />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="p-6 border-b">
-                  <div className="flex items-center gap-3">
+              <SheetContent side="left" className="w-72 p-0">
+                <div className="p-4 border-b">
+                  <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                       <Icon name="Users" size={20} className="text-white" />
                     </div>
                     <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                       SocialHub
                     </h1>
+                  </div>
+
+                  <div 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                    onClick={() => setActiveTab('profile')}
+                  >
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
+                      <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate">{mockUser.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">@{mockUser.username}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -226,21 +264,28 @@ export default function Index() {
                       >
                         <Icon name={item.icon as any} size={20} />
                         <span>{item.label}</span>
+                        {item.id === 'messages' && mockChats.reduce((acc, chat) => acc + chat.unread, 0) > 0 && (
+                          <Badge className="ml-auto">{mockChats.reduce((acc, chat) => acc + chat.unread, 0)}</Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
                 </nav>
 
                 <div className="p-4 border-t space-y-2">
-                  <Button variant="ghost" className="w-full justify-start gap-3">
+                  <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleNotificationsClick}>
                     <Icon name="Bell" size={20} />
                     <span>Уведомления</span>
+                    {notifications > 0 && <Badge className="ml-auto">{notifications}</Badge>}
                   </Button>
                   <Button variant="ghost" className="w-full justify-start gap-3">
                     <Icon name="Settings" size={20} />
                     <span>Настройки</span>
                   </Button>
-                  <ThemeToggle />
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-sm">Тема</span>
+                    <ThemeToggle />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -274,21 +319,10 @@ export default function Index() {
                 />
               </div>
             </form>
-
-            <div className="flex items-center gap-3">
-              <Avatar className="w-9 h-9 cursor-pointer">
-                <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
-                <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="hidden xl:block">
-                <p className="text-sm font-semibold">{mockUser.name}</p>
-                <p className="text-xs text-muted-foreground">@{mockUser.username}</p>
-              </div>
-            </div>
           </div>
         </header>
 
-        <main className="p-4 md:p-6">
+        <main className="p-3 sm:p-4 md:p-6">
           {activeTab === 'feed' && (
           <div className="space-y-6">
             <Card className="p-4">
@@ -301,17 +335,17 @@ export default function Index() {
               </ScrollArea>
             </Card>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4">
-                <Card className="p-4">
-                  <div className="flex gap-3">
-                    <Avatar>
+            <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="lg:col-span-2 space-y-3 md:space-y-4">
+                <Card className="p-3 sm:p-4">
+                  <div className="flex gap-2 sm:gap-3">
+                    <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
                       <AvatarImage src={mockUser.avatar} alt={mockUser.name} />
                       <AvatarFallback>{mockUser.name[0]}</AvatarFallback>
                     </Avatar>
                     <Input 
                       placeholder="Что у вас нового?" 
-                      className="flex-1"
+                      className="flex-1 text-sm sm:text-base"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           toast({ description: 'Пост опубликован!' });
@@ -319,8 +353,8 @@ export default function Index() {
                         }
                       }}
                     />
-                    <Button onClick={() => toast({ description: 'Пост опубликован!' })}>
-                      <Icon name="Send" size={18} />
+                    <Button onClick={() => toast({ description: 'Пост опубликован!' })} size="sm" className="sm:size-default">
+                      <Icon name="Send" size={16} className="sm:size-[18px]" />
                     </Button>
                   </div>
                 </Card>
@@ -360,7 +394,7 @@ export default function Index() {
 
           {activeTab === 'messages' && (
           <div>
-            <div className="grid lg:grid-cols-3 gap-4" style={{ height: 'calc(100vh - 180px)' }}>
+            <div className="grid lg:grid-cols-3 gap-3 md:gap-4" style={{ height: 'calc(100vh - 160px)' }}>
               <Card className="lg:col-span-1 overflow-hidden flex flex-col">
                 <div className="p-4 border-b flex-shrink-0">
                   <div className="relative">
@@ -407,8 +441,8 @@ export default function Index() {
           {activeTab === 'friends' && (
           <div>
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-bold mb-6">Друзья</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Друзья</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {mockChats.map((friend) => (
                   <Card key={friend.id} className="p-4">
                     <div className="flex flex-col items-center text-center">
@@ -444,8 +478,15 @@ export default function Index() {
           {activeTab === 'groups' && (
           <div>
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-2xl font-bold mb-6">Мои группы</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
+                <h2 className="text-xl sm:text-2xl font-bold">Мои группы</h2>
+                <Button onClick={() => setCreateGroupOpen(true)} className="gap-2" size="sm">
+                  <Icon name="Plus" size={16} />
+                  <span className="hidden sm:inline">Создать</span>
+                  <span className="sm:hidden">+</span>
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {[
                   { name: 'Любители фотографии', members: '12.5k', cover: '/placeholder.svg' },
                   { name: 'Путешественники', members: '8.2k', cover: '/placeholder.svg' },
@@ -469,6 +510,12 @@ export default function Index() {
           )}
         </main>
       </div>
+
+      <CreateGroupDialog
+        open={createGroupOpen}
+        onOpenChange={setCreateGroupOpen}
+        friends={mockChats.map(chat => ({ id: chat.id, name: chat.name, avatar: chat.avatar }))}
+      />
     </div>
   );
 }
